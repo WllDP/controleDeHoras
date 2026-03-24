@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld("DesktopAPI", {
   onAppRequestClose: (handler) => ipcRenderer.on("app-request-close", () => handler()),
   onDownloadStatus: (handler) =>
     ipcRenderer.on("download-status", (_event, payload) => handler(payload)),
+  setIgnoreMouse: (ignore) => ipcRenderer.send("set-ignore-mouse", Boolean(ignore)),
+  setWidgetHitbox: (rect) => ipcRenderer.send("set-widget-hitbox", rect),
 });
 
 function getWidgetRoot() {

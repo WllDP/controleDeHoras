@@ -680,6 +680,30 @@ try {
       const widgetRoot = document.getElementById("widget-root");
       const TRANSITION_CLASS = "theme-transition";
 
+      function reportWidgetHitbox() {
+        if (!window.DesktopAPI?.setWidgetHitbox || !widgetRoot) return;
+        const r = widgetRoot.getBoundingClientRect();
+        const sx = Number(window.screenX ?? window.screenLeft ?? 0);
+        const sy = Number(window.screenY ?? window.screenTop ?? 0);
+        const rect = {
+          x: Math.round(sx + r.left),
+          y: Math.round(sy + r.top),
+          width: Math.round(r.width),
+          height: Math.round(r.height),
+        };
+        window.DesktopAPI.setWidgetHitbox(rect);
+      }
+
+      if (widgetRoot && window.DesktopAPI?.setWidgetHitbox) {
+        reportWidgetHitbox();
+        setInterval(reportWidgetHitbox, 200);
+        if ("ResizeObserver" in window) {
+          const ro = new ResizeObserver(() => reportWidgetHitbox());
+          ro.observe(widgetRoot);
+        }
+        window.addEventListener("resize", reportWidgetHitbox);
+      }
+
       function syncThemeToggle(theme) {
         if (!themeSettingsToggle) return;
         const isDark = theme === "dark";

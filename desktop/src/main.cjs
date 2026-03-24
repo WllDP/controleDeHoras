@@ -25,6 +25,9 @@ let miniPrimed = false;
 let miniShowTimer = null;
 let pendingMiniAction = null;
 let allowClose = false;
+let widgetHitbox = null;
+let clickThroughTimer = null;
+let lastIgnoreState = null;
 
 // =====================================
 // IPC: preparar o caminho do próximo download
@@ -177,6 +180,21 @@ function setAutoLaunchState(enabled) {
 
 ipcMain.handle("get-auto-launch", () => getAutoLaunchState());
 ipcMain.handle("set-auto-launch", (_event, enabled) => setAutoLaunchState(enabled));
+ipcMain.on("set-ignore-mouse", (_event, ignore) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    mainWindow.setIgnoreMouseEvents(Boolean(ignore), { forward: true });
+  } catch {}
+});
+ipcMain.on("set-widget-hitbox", (_event, rect) => {
+  if (!rect || typeof rect !== "object") return;
+  const x = Number(rect.x);
+  const y = Number(rect.y);
+  const w = Number(rect.width);
+  const h = Number(rect.height);
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(w) || !Number.isFinite(h)) return;
+  widgetHitbox = { x, y, width: w, height: h };
+});
 
 // Resize suave e centralizado
 let resizeLock = false;
@@ -479,6 +497,31 @@ function createMainWindow(url) {
   });
 
   mainWindow.loadURL(url);
+
+  if (clickThroughTimer) clearInterval(clickThroughTimer);
+  clickThroughTimer = setInterval(() => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (mainWindow.isMinimized()) return;
+    if (!widgetHitbox) {
+      if (lastIgnoreState !== false) {
+        lastIgnoreState = false;
+        try { mainWindow.setIgnoreMouseEvents(false, { forward: true }); } catch {}
+      }
+      return;
+    }
+
+    const point = screen.getCursorScreenPoint();
+    const inside =
+      point.x >= widgetHitbox.x &&
+      point.x <= widgetHitbox.x + widgetHitbox.width &&
+      point.y >= widgetHitbox.y &&
+      point.y <= widgetHitbox.y + widgetHitbox.height;
+    const nextIgnore = !inside;
+    if (lastIgnoreState !== nextIgnore) {
+      lastIgnoreState = nextIgnore;
+      try { mainWindow.setIgnoreMouseEvents(nextIgnore, { forward: true }); } catch {}
+    }
+  }, 80);
 }
 
 function closeMiniWindow() {
