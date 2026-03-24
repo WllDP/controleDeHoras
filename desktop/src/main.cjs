@@ -379,7 +379,11 @@ async function startPhpServer(port) {
   phpProcess = spawn(phpExe, args, {
     cwd: appRoot,
     windowsHide: true,
-    env: { ...process.env, APP_VERSION: app.getVersion() },
+    env: {
+      ...process.env,
+      APP_VERSION: app.getVersion(),
+      CONTROLE_HORAS_CACHE: path.join(app.getPath("userData"), "excel-cache"),
+    },
   });
 
   phpProcess.stdout.on("data", (d) => console.log("[PHP]", d.toString()));

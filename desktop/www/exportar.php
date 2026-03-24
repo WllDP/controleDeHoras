@@ -70,9 +70,13 @@ $tz = new DateTimeZone('America/Sao_Paulo');
 $usuario = (string)$_SESSION['usuario'];
 $projeto = (string)$_SESSION['projeto'];
 
-$cacheDir = __DIR__ . '/excel/cache';
+$cacheDir = getenv('CONTROLE_HORAS_CACHE');
+if (!$cacheDir) {
+    $appData = getenv('APPDATA') ?: getenv('LOCALAPPDATA') ?: sys_get_temp_dir();
+    $cacheDir = rtrim($appData, '\\/') . '/ControleHoras/excel-cache';
+}
 if (!is_dir($cacheDir)) {
-    mkdir($cacheDir, 0775, true);
+    @mkdir($cacheDir, 0775, true);
 }
 
 $hash = sha1($usuario . '|' . $projeto);

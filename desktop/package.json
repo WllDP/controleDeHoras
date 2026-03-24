@@ -29,6 +29,10 @@
         "to": "resources/php/win"
       },
       {
+        "from": "../vendor",
+        "to": "vendor"
+      },
+      {
         "from": "www",
         "to": "www"
       }
