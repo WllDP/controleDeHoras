@@ -1,6 +1,6 @@
 {
   "name": "controle-horas",
-  "version": "5.1.0",
+  "version": "5.1.3",
   "description": "Controle de Horas",
   "main": "src/main.cjs",
   "type": "commonjs",
@@ -12,6 +12,9 @@
   "devDependencies": {
     "electron": "^33.4.11",
     "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.7"
   },
   "build": {
     "appId": "com.william.controlehoras",
@@ -47,9 +50,17 @@
       ]
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "WllDP",
+        "repo": "controleDeHoras",
+        "releaseType": "release"
+      }
+    ]
   }
 }

@@ -1,4 +1,5 @@
 const { app, BrowserWindow, dialog, session, ipcMain, screen } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -28,6 +29,7 @@ let allowClose = false;
 let widgetHitbox = null;
 let clickThroughTimer = null;
 let lastIgnoreState = null;
+let updaterReady = false;
 
 // =====================================
 // IPC: preparar o caminho do próximo download
@@ -194,6 +196,56 @@ ipcMain.on("set-widget-hitbox", (_event, rect) => {
   const h = Number(rect.height);
   if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(w) || !Number.isFinite(h)) return;
   widgetHitbox = { x, y, width: w, height: h };
+});
+
+// =====================================
+// Updates (GitHub Releases)
+// =====================================
+function setupAutoUpdater() {
+  if (!app.isPackaged || updaterReady) return;
+  updaterReady = true;
+  autoUpdater.autoDownload = false;
+
+  autoUpdater.on("update-available", (info) => {
+    mainWindow?.webContents.send("update-available", info);
+  });
+  autoUpdater.on("update-not-available", (info) => {
+    mainWindow?.webContents.send("update-not-available", info);
+  });
+  autoUpdater.on("error", (err) => {
+    const message = err?.message || String(err || "Erro ao buscar atualizações");
+    mainWindow?.webContents.send("update-error", message);
+  });
+  autoUpdater.on("download-progress", (progress) => {
+    mainWindow?.webContents.send("update-progress", progress);
+  });
+  autoUpdater.on("update-downloaded", (info) => {
+    mainWindow?.webContents.send("update-downloaded", info);
+  });
+}
+
+ipcMain.handle("check-for-updates", async () => {
+  if (!app.isPackaged) return { status: "dev" };
+  setupAutoUpdater();
+  try {
+    await autoUpdater.checkForUpdates();
+    return { status: "checking" };
+  } catch (err) {
+    const message = err?.message || String(err || "Erro ao buscar atualizações");
+    mainWindow?.webContents.send("update-error", message);
+    return { status: "error", message };
+  }
+});
+ipcMain.handle("download-update", async () => {
+  if (!app.isPackaged) return { status: "dev" };
+  setupAutoUpdater();
+  await autoUpdater.downloadUpdate();
+  return { status: "downloading" };
+});
+ipcMain.handle("quit-and-install", async () => {
+  if (!app.isPackaged) return { status: "dev" };
+  autoUpdater.quitAndInstall();
+  return { status: "restarting" };
 });
 
 // Resize suave e centralizado
@@ -526,6 +578,10 @@ function createMainWindow(url) {
       try { mainWindow.setIgnoreMouseEvents(nextIgnore, { forward: true }); } catch {}
     }
   }, 80);
+
+  if (app.isPackaged) {
+    setupAutoUpdater();
+  }
 }
 
 function closeMiniWindow() {

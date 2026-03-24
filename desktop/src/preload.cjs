@@ -18,6 +18,14 @@ contextBridge.exposeInMainWorld("DesktopAPI", {
     ipcRenderer.on("download-status", (_event, payload) => handler(payload)),
   setIgnoreMouse: (ignore) => ipcRenderer.send("set-ignore-mouse", Boolean(ignore)),
   setWidgetHitbox: (rect) => ipcRenderer.send("set-widget-hitbox", rect),
+  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+  downloadUpdate: () => ipcRenderer.invoke("download-update"),
+  quitAndInstall: () => ipcRenderer.invoke("quit-and-install"),
+  onUpdateAvailable: (handler) => ipcRenderer.on("update-available", (_e, info) => handler(info)),
+  onUpdateNotAvailable: (handler) => ipcRenderer.on("update-not-available", (_e, info) => handler(info)),
+  onUpdateDownloaded: (handler) => ipcRenderer.on("update-downloaded", (_e, info) => handler(info)),
+  onUpdateProgress: (handler) => ipcRenderer.on("update-progress", (_e, progress) => handler(progress)),
+  onUpdateError: (handler) => ipcRenderer.on("update-error", (_e, message) => handler(message)),
 });
 
 function getWidgetRoot() {

@@ -18,6 +18,8 @@ $stmt = $db->prepare('SELECT DISTINCT projeto FROM atividades_pausadas WHERE col
 $stmt->execute([':u' => $usuario]);
 $pausedProjects = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
 
+$hasProjects = count($projetos) > 0;
+
 ob_start();
 ?>
 
@@ -52,7 +54,10 @@ ob_start();
                 <button
                     type="button"
                     id="editProjectsBtn"
-                    class="h-10 w-10 inline-flex items-center justify-center text-[#0b2a5b] hover:text-[#1f5a96] transition text-lg"
+                    class="h-10 w-10 inline-flex items-center justify-center text-[#0b2a5b] transition text-lg<?= $hasProjects ? ' hover:text-[#1f5a96]' : ' cursor-default' ?>"
+                    <?= $hasProjects ? '' : 'disabled' ?>
+                    title="Editar nome do projeto"
+                    aria-label="Editar nome do projeto"
                 >
                     <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                 </button>
