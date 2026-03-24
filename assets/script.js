@@ -208,6 +208,17 @@
     return showModal({ message, confirm: true });
   }
 
+  function nextModalToken(overlay) {
+    if (!overlay) return null;
+    const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    overlay.dataset.modalToken = token;
+    return token;
+  }
+
+  function isTokenActive(overlay, token) {
+    return Boolean(overlay && token && overlay.dataset.modalToken === token);
+  }
+
   function showModal({ message, confirm, html = false, autoCloseMs = 0, hideOk = false, content = "" }) {
     const overlay = document.getElementById("appModalOverlay");
     const msg = document.getElementById("appModalMessage");
@@ -218,6 +229,11 @@
       return Promise.resolve(confirm ? window.confirm(message) : (window.alert(message), true));
     }
 
+    if (overlay.__modalState && typeof overlay.__modalState.forceClose === "function") {
+      overlay.__modalState.forceClose({ keepOpen: true });
+    }
+
+    const token = nextModalToken(overlay);
     msg.title = message;
     msg.classList.toggle("has-icon", html);
     msg.classList.toggle("text-center", html || confirm);
@@ -236,14 +252,24 @@
 
     return new Promise(resolve => {
       let autoTimer = null;
+      let closed = false;
       const cleanup = (result) => {
+        if (closed) return;
+        closed = true;
         if (autoTimer) clearTimeout(autoTimer);
-        overlay.classList.remove("is-open");
-        setTimeout(() => {
-          overlay.classList.add("hidden");
-        }, 150);
         okBtn.onclick = null;
         cancelBtn.onclick = null;
+        if (overlay.__modalState && overlay.__modalState.token === token) {
+          overlay.__modalState = null;
+        }
+        if (isTokenActive(overlay, token)) {
+          overlay.classList.remove("is-open");
+          setTimeout(() => {
+            if (isTokenActive(overlay, token)) {
+              overlay.classList.add("hidden");
+            }
+          }, 150);
+        }
         resolve(result);
       };
 
@@ -266,6 +292,24 @@
       if (!confirm && autoCloseMs > 0) {
         autoTimer = setTimeout(() => cleanup(true), autoCloseMs);
       }
+
+      overlay.__modalState = {
+        token,
+        forceClose: (opts = {}) => {
+          if (opts.keepOpen) {
+            if (autoTimer) clearTimeout(autoTimer);
+            okBtn.onclick = null;
+            cancelBtn.onclick = null;
+            if (overlay.__modalState && overlay.__modalState.token === token) {
+              overlay.__modalState = null;
+            }
+            resolve(false);
+            closed = true;
+            return;
+          }
+          cleanup(false);
+        },
+      };
     });
   }
 

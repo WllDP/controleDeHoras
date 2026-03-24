@@ -147,6 +147,15 @@ ob_start();
     let editing = false;
     const changedProjects = new Map();
     let alertHideTimer = null;
+    function nextModalToken(overlay) {
+      if (!overlay) return null;
+      const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      overlay.dataset.modalToken = token;
+      return token;
+    }
+    function isTokenActive(overlay, token) {
+      return Boolean(overlay && token && overlay.dataset.modalToken === token);
+    }
     function showProjectAlert(message) {
       const overlay = document.getElementById("appModalOverlay");
       const msg = document.getElementById("appModalMessage");
@@ -158,6 +167,11 @@ ob_start();
         return;
       }
 
+      if (overlay.__modalState && typeof overlay.__modalState.forceClose === "function") {
+        overlay.__modalState.forceClose({ keepOpen: true });
+      }
+
+      const token = nextModalToken(overlay);
       const iconDurationMs = 1600;
       const icon = `
         <div class="flex flex-col items-center gap-2 text-center">
@@ -193,11 +207,36 @@ ob_start();
       });
 
       alertHideTimer = setTimeout(() => {
+        if (!isTokenActive(overlay, token)) return;
         overlay.classList.remove("is-open");
         setTimeout(() => {
-          overlay.classList.add("hidden");
+          if (isTokenActive(overlay, token)) {
+            overlay.classList.add("hidden");
+          }
         }, 150);
       }, iconDurationMs);
+
+      overlay.__modalState = {
+        token,
+        forceClose: (opts = {}) => {
+          if (alertHideTimer) {
+            clearTimeout(alertHideTimer);
+            alertHideTimer = null;
+          }
+          if (overlay.__modalState && overlay.__modalState.token === token) {
+            overlay.__modalState = null;
+          }
+          if (opts.keepOpen) return;
+          if (isTokenActive(overlay, token)) {
+            overlay.classList.remove("is-open");
+            setTimeout(() => {
+              if (isTokenActive(overlay, token)) {
+                overlay.classList.add("hidden");
+              }
+            }, 150);
+          }
+        },
+      };
     }
 
     function setEditingState(next) {
