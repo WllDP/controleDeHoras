@@ -819,11 +819,69 @@ try {
       let updateChecking = false;
       let updateDownloading = false;
 
+      let overlayHideTimer = null;
+      function cancelOverlayHide() {
+        if (overlayHideTimer) {
+          clearTimeout(overlayHideTimer);
+          overlayHideTimer = null;
+        }
+      }
+      function nextModalToken() {
+        if (!overlay) return null;
+        const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        overlay.dataset.modalToken = token;
+        return token;
+      }
+      function isTokenActive(token) {
+        return Boolean(overlay && token && overlay.dataset.modalToken === token);
+      }
+      function scheduleOverlayHide(token) {
+        if (!overlay) return;
+        if (!isTokenActive(token)) return;
+        overlay.classList.remove("is-open");
+        cancelOverlayHide();
+        overlayHideTimer = setTimeout(() => {
+          if (isTokenActive(token)) {
+            overlay.classList.add("hidden");
+          }
+          overlayHideTimer = null;
+        }, 150);
+      }
+      function beginModal(onForceClose) {
+        if (!overlay) return { token: null, close: () => {} };
+        if (overlay.__modalState && typeof overlay.__modalState.forceClose === "function") {
+          overlay.__modalState.forceClose({ keepOpen: true });
+        }
+        const token = nextModalToken();
+        let closed = false;
+        const close = (opts = {}) => {
+          if (closed) return;
+          closed = true;
+          if (overlay.__modalState && overlay.__modalState.token === token) {
+            overlay.__modalState = null;
+          }
+          if (!opts.keepOpen) {
+            scheduleOverlayHide(token);
+          }
+        };
+        overlay.__modalState = {
+          token,
+          forceClose: (opts = {}) => {
+            close(opts);
+            if (typeof onForceClose === "function") {
+              onForceClose();
+            }
+          },
+        };
+        return { token, close };
+      }
+
       function showConfirm(message) {
         if (!overlay || !msg || !okBtn || !cancelBtn) {
           return Promise.resolve(window.confirm(message));
         }
 
+        let modal = null;
         msg.textContent = message;
         msg.title = message;
         msg.classList.remove("has-icon");
@@ -839,20 +897,62 @@ try {
         });
 
         return new Promise(resolve => {
-          const cleanup = (result) => {
-            overlay.classList.remove("is-open");
-            setTimeout(() => {
-              overlay.classList.add("hidden");
-            }, 150);
+          let resolved = false;
+          const cleanup = (result, forced = false) => {
+            if (resolved) return;
+            resolved = true;
+            modal?.close({ keepOpen: forced });
             okBtn.onclick = null;
             cancelBtn.onclick = null;
             resolve(result);
           };
 
+          modal = beginModal(() => cleanup(false, true));
           okBtn.onclick = () => cleanup(true);
           cancelBtn.onclick = () => cleanup(false);
           setTimeout(() => okBtn.focus(), 0);
         });
+      }
+
+      function showIconInfo(message) {
+        if (!overlay || !msg || !okBtn || !cancelBtn) {
+          window.alert(message);
+          return;
+        }
+
+        const modal = beginModal();
+        const iconDurationMs = 1600;
+        const icon = `
+          <div class="flex flex-col items-center gap-2 text-center">
+            <div class="text-sm text-slate-800">${message}</div>
+            <lord-icon
+              src="https://cdn.lordicon.com/yfxqzclt.json"
+              trigger="in"
+              delay="0"
+              state="in-error"
+              colors="primary:#e83a30"
+              style="width:40px;height:40px"
+            ></lord-icon>
+          </div>
+        `;
+
+        msg.innerHTML = icon;
+        msg.title = message;
+        msg.classList.add("has-icon", "text-center");
+        if (box) box.classList.add("app-modal-compact");
+        overlay.classList.remove("is-open");
+        overlay.classList.add("hidden");
+        void overlay.offsetWidth;
+        cancelBtn.classList.add("hidden");
+        okBtn.classList.add("hidden");
+        overlay.classList.remove("hidden");
+        requestAnimationFrame(() => {
+          overlay.classList.add("is-open");
+        });
+
+        setTimeout(() => {
+          modal.close();
+        }, iconDurationMs);
       }
 
       function showInfo(message) {
@@ -861,6 +961,7 @@ try {
           return Promise.resolve(true);
         }
 
+        let modal = null;
         msg.textContent = message;
         msg.title = message;
         msg.classList.remove("has-icon");
@@ -876,15 +977,16 @@ try {
         });
 
         return new Promise(resolve => {
-          const cleanup = () => {
-            overlay.classList.remove("is-open");
-            setTimeout(() => {
-              overlay.classList.add("hidden");
-            }, 150);
+          let resolved = false;
+          const cleanup = (forced = false) => {
+            if (resolved) return;
+            resolved = true;
+            modal?.close({ keepOpen: forced });
             okBtn.onclick = null;
             resolve(true);
           };
-          okBtn.onclick = cleanup;
+          modal = beginModal(() => cleanup(true));
+          okBtn.onclick = () => cleanup(false);
           setTimeout(() => okBtn.focus(), 0);
         });
       }
@@ -893,6 +995,7 @@ try {
       function showUpdateProgress(percent) {
         if (!overlay || !msg || !okBtn || !cancelBtn) return;
         const safePct = Math.max(0, Math.min(100, Math.round(percent)));
+        beginModal();
         msg.classList.remove("has-icon");
         msg.classList.add("text-center");
         msg.innerHTML = `
@@ -911,8 +1014,7 @@ try {
 
       function closeUpdateModal() {
         if (!overlay) return;
-        overlay.classList.remove("is-open");
-        setTimeout(() => overlay.classList.add("hidden"), 150);
+        scheduleOverlayHide(overlay.dataset.modalToken);
         updateModalOpen = false;
       }
 
@@ -1027,7 +1129,7 @@ try {
           if (res && res.status === "dev") {
             updateChecking = false;
             resetButton();
-            showInfo("As atualizações estão disponíveis apenas na versão instalada do app.");
+            showIconInfo("Nenhuma atualização disponível.");
             return;
           }
           setTimeout(() => {
@@ -1055,7 +1157,7 @@ try {
         window.DesktopAPI.onUpdateNotAvailable?.(() => {
           updateChecking = false;
           resetButton();
-          showInfo("Nenhuma atualização disponível.");
+          showIconInfo("Nenhuma atualização disponível.");
         });
 
         window.DesktopAPI.onUpdateError?.((message) => {
