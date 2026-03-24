@@ -1,0 +1,51 @@
+{
+  "name": "controle-horas",
+  "version": "5.1.0",
+  "description": "Controle de Horas",
+  "main": "src/main.cjs",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "electron .",
+    "pack": "node scripts/write-version.cjs && electron-builder --dir",
+    "dist": "node scripts/write-version.cjs && electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.william.controlehoras",
+    "productName": "Controle de Horas",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/php/win",
+        "to": "resources/php/win"
+      },
+      {
+        "from": "www",
+        "to": "www"
+      }
+    ],
+    "asarUnpack": [
+      "resources/php/**"
+    ],
+    "win": {
+      "icon": "resources/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  }
+}

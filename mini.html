@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atividade em andamento</title>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer" />
+  <style>
+    :root {
+      --bg: rgba(255, 255, 255, 0.88);
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #dc2626;
+      --hover-bg: #f1f5f9;
+      --card-shadow: 0 6px 3px rgba(15, 23, 42, 0.15);
+    }
+    body[data-theme="dark"] {
+      --bg: rgba(17, 24, 39, 0.88);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #1f2937;
+      --hover-bg: #1e293b;
+      --card-shadow: 0 6px 3px rgba(15, 23, 42, 0.15);
+    }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      font-family: "Montserrat", sans-serif;
+    }
+    .mini-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      box-shadow: var(--card-shadow);
+      padding: 6px 6px 5px;
+      -webkit-app-region: drag;
+      transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+    }
+    .mini-header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .mini-title {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: color 220ms ease;
+    }
+    .mini-activity {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 2px;
+      max-width: 170px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color 220ms ease;
+    }
+    .mini-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .mini-time {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      transition: color 220ms ease;
+    }
+    .mini-actions {
+      display: inline-flex;
+      gap: 6px;
+    }
+    .mini-btn {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 3px 6px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease, color 220ms ease;
+    }
+    .mini-btn:hover {
+      transform: translateY(-1px);
+      background: var(--hover-bg);
+    }
+    body[data-theme="dark"] .mini-btn {
+      background: #0f172a;
+      border-color: var(--border);
+    }
+    .mini-btn.playlike {
+      color: #ffffff;
+      background: #16a34a;
+      border-color: #16a34a;
+    }
+    .mini-btn.playlike:hover {
+      background: #15803d;
+      border-color: #15803d;
+    }
+    .mini-btn.pause {
+      color: #ffffff;
+      background: #f59e0b;
+      border-color: #f59e0b;
+    }
+    .mini-btn.pause:hover {
+      background: #d97706;
+      border-color: #d97706;
+    }
+    .mini-btn.stop {
+      color: #ffffff;
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+    .mini-btn.stop:hover {
+      background: #b91c1c;
+      border-color: #b91c1c;
+    }
+    .mini-close {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0 2px;
+      line-height: 1;
+      transition: color 120ms ease;
+    }
+    .no-drag {
+      -webkit-app-region: no-drag;
+    }
+    .mini-close:hover {
+      color: #dc2626;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="mini-card">
+    <div class="mini-header">
+      <div>
+        <div class="mini-title">Atividade em andamento</div>
+        <div id="miniActivity" class="mini-activity">Atividade</div>
+      </div>
+      <button id="miniClose" class="mini-close no-drag" aria-label="Fechar">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="mini-row">
+      <div class="mini-actions">
+        <button id="miniPause" class="mini-btn pause no-drag" type="button" aria-label="Pausar">
+          <i class="fa-solid fa-pause" aria-hidden="true"></i>
+        </button>
+        <button id="miniResume" class="mini-btn playlike no-drag hidden" type="button" aria-label="Retomar">
+          <i class="fa-solid fa-play" aria-hidden="true"></i>
+        </button>
+        <button id="miniStop" class="mini-btn stop no-drag" type="button" aria-label="Encerrar">
+          <i class="fa-solid fa-stop" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div id="miniTime" class="mini-time">00:00:00</div>
+    </div>
+  </div>
+
+  <script src="assets/mini.js"></script>
+</body>
+</html>

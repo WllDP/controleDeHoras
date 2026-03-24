@@ -1,0 +1,30 @@
+# Node
+node_modules/
+desktop/node_modules/
+
+# Electron build
+desktop/dist/
+dist/
+build/
+
+# PHP (Composer)
+vendor/
+
+# Cache
+.npm-cache/
+
+# Editor
+.vscode/
+
+# Executáveis
+*.exe
+
+# Backups
+backup*/
+*.zip
+
+# Logs
+*.log
+
+# Ambiente
+.env
