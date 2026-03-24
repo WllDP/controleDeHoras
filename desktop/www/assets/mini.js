@@ -1,6 +1,43 @@
 (() => {
   "use strict";
 
+  const THEME_KEY = "controle_horas::theme";
+
+  function applyTheme(theme) {
+    if (theme === "dark") {
+      document.body.setAttribute("data-theme", "dark");
+    } else {
+      document.body.removeAttribute("data-theme");
+    }
+  }
+
+  async function loadTheme() {
+    try {
+      const res = await fetch("get_theme.php", { cache: "no-store" });
+      const data = await res.json().catch(() => null);
+      if (data && (data.theme === "dark" || data.theme === "light")) {
+        applyTheme(data.theme);
+        return;
+      }
+    } catch {}
+
+    try {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved === "dark" || saved === "light") {
+        applyTheme(saved);
+        return;
+      }
+    } catch {}
+    applyTheme("light");
+  }
+
+  loadTheme();
+  window.addEventListener("storage", (event) => {
+    if (event.key === THEME_KEY) {
+      applyTheme(event.newValue === "dark" ? "dark" : "light");
+    }
+  });
+
   let activity = null;
   let timerId = null;
 
