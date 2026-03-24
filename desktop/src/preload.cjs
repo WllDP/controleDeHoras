@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld("DesktopAPI", {
   onUpdateDownloaded: (handler) => ipcRenderer.on("update-downloaded", (_e, info) => handler(info)),
   onUpdateProgress: (handler) => ipcRenderer.on("update-progress", (_e, progress) => handler(progress)),
   onUpdateError: (handler) => ipcRenderer.on("update-error", (_e, message) => handler(message)),
+  onUpdateRestarting: (handler) =>
+    ipcRenderer.on("update-restarting", () => handler()),
 });
 
 function getWidgetRoot() {

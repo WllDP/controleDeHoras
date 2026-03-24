@@ -818,6 +818,7 @@ try {
       const checkUpdatesBtn = document.getElementById("checkUpdatesBtn");
       let updateChecking = false;
       let updateDownloading = false;
+      let suppressCloseConfirm = false;
 
       let overlayHideTimer = null;
       function cancelOverlayHide() {
@@ -1174,8 +1175,12 @@ try {
           closeUpdateModal();
           const ok = await showConfirm("Atualização instalada. Deseja reiniciar agora?");
           if (ok) {
+            suppressCloseConfirm = true;
             window.DesktopAPI.quitAndInstall?.();
           }
+        });
+        window.DesktopAPI.onUpdateRestarting?.(() => {
+          suppressCloseConfirm = true;
         });
 
         window.DesktopAPI.onUpdateProgress?.((progress) => {
@@ -1187,6 +1192,7 @@ try {
 
 
       window.handleClose = async function () {
+        if (suppressCloseConfirm) return;
         const message = hasRunningActivity()
           ? "Existe uma atividade em andamento. Deseja fechar o app?"
           : "Deseja fechar o app?";
@@ -1197,6 +1203,7 @@ try {
 
       if (window.DesktopAPI?.onAppRequestClose) {
         window.DesktopAPI.onAppRequestClose(async () => {
+          if (suppressCloseConfirm) return;
           const message = hasRunningActivity()
             ? "Existe uma atividade em andamento. Deseja fechar o app?"
             : "Deseja fechar o app?";
@@ -1209,3 +1216,4 @@ try {
   </script>
 </body>
 </html>
+

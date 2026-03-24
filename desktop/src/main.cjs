@@ -30,6 +30,7 @@ let widgetHitbox = null;
 let clickThroughTimer = null;
 let lastIgnoreState = null;
 let updaterReady = false;
+let isQuittingForUpdate = false;
 
 // =====================================
 // IPC: preparar o caminho do próximo download
@@ -222,6 +223,9 @@ function setupAutoUpdater() {
   autoUpdater.on("update-downloaded", (info) => {
     mainWindow?.webContents.send("update-downloaded", info);
   });
+  autoUpdater.on("before-quit-for-update", () => {
+    isQuittingForUpdate = true;
+  });
 }
 
 ipcMain.handle("check-for-updates", async () => {
@@ -244,6 +248,10 @@ ipcMain.handle("download-update", async () => {
 });
 ipcMain.handle("quit-and-install", async () => {
   if (!app.isPackaged) return { status: "dev" };
+  isQuittingForUpdate = true;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("update-restarting");
+  }
   autoUpdater.quitAndInstall();
   return { status: "restarting" };
 });
@@ -333,6 +341,25 @@ function getPhpIni() {
   return path.join(base, "resources", "php", "win", "php.ini");
 }
 
+function getUserDbPath() {
+  return path.join(app.getPath("userData"), "db.sqlite");
+}
+
+function ensureUserDb(appRoot) {
+  const userDb = getUserDbPath();
+  if (fs.existsSync(userDb)) return userDb;
+  try {
+    const sourceDb = path.join(appRoot, "db.sqlite");
+    if (fs.existsSync(sourceDb)) {
+      fs.mkdirSync(path.dirname(userDb), { recursive: true });
+      fs.copyFileSync(sourceDb, userDb);
+    }
+  } catch (err) {
+    console.error("[DB] falha ao copiar db para userData", err);
+  }
+  return userDb;
+}
+
 // =====================================
 // Networking helpers
 // =====================================
@@ -420,6 +447,7 @@ async function startPhpServer(port) {
   const appRoot = getAppRoot();
   const phpExe = getPhpExe();
   const phpIni = getPhpIni();
+  const userDb = ensureUserDb(appRoot);
 
   if (!fs.existsSync(appRoot)) throw new Error(`Pasta do appRoot não existe: ${appRoot}`);
   if (!fs.existsSync(path.join(appRoot, "index.php"))) throw new Error(`index.php não encontrado em: ${appRoot}`);
@@ -434,6 +462,7 @@ async function startPhpServer(port) {
     env: {
       ...process.env,
       APP_VERSION: app.getVersion(),
+      CONTROLE_HORAS_DB: userDb,
       CONTROLE_HORAS_CACHE: path.join(app.getPath("userData"), "excel-cache"),
     },
   });
@@ -477,6 +506,7 @@ function createMainWindow(url) {
   mainWindow.removeMenu();
   mainWindow.setResizable(false);
   mainWindow.on("close", (event) => {
+    if (isQuittingForUpdate) return;
     if (allowClose) return;
     event.preventDefault();
     try {
@@ -730,7 +760,14 @@ function showMiniWindow() {
   }, 0);
 }
 
+function isOnDashboard() {
+  if (!mainWindow || mainWindow.isDestroyed()) return false;
+  const currentUrl = mainWindow.webContents.getURL() || "";
+  return currentUrl.includes("dashboard.php");
+}
+
 function openMiniIfNeeded() {
+  if (!isOnDashboard()) return;
   if (!currentActivity || miniDismissed || !currentPort) return;
   ensureMiniWindow();
   if (miniWindow && !miniWindow.isDestroyed()) {

@@ -3,7 +3,28 @@ date_default_timezone_set('America/Sao_Paulo');
 
 session_start();
 
-$db = new PDO('sqlite:db.sqlite');
+$dbPath = getenv('CONTROLE_HORAS_DB');
+if ($dbPath === false || $dbPath === '') {
+    $base = getenv('APPDATA');
+    if ($base === false || $base === '') {
+        $base = getenv('LOCALAPPDATA');
+    }
+    if ($base !== false && $base !== '') {
+        $dbPath = $base . DIRECTORY_SEPARATOR . 'Controle de Horas' . DIRECTORY_SEPARATOR . 'db.sqlite';
+    } else {
+        $dbPath = __DIR__ . DIRECTORY_SEPARATOR . 'db.sqlite';
+    }
+}
+$dir = dirname($dbPath);
+if (!is_dir($dir)) {
+    @mkdir($dir, 0777, true);
+}
+try {
+    $db = new PDO('sqlite:' . $dbPath);
+} catch (Throwable $e) {
+    $fallback = __DIR__ . DIRECTORY_SEPARATOR . 'db.sqlite';
+    $db = new PDO('sqlite:' . $fallback);
+}
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $db->exec("
