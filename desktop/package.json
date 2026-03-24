@@ -1,6 +1,6 @@
 {
   "name": "controle-horas",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "Controle de Horas",
   "main": "src/main.cjs",
   "type": "commonjs",
@@ -52,7 +52,8 @@
     "nsis": {
       "oneClick": true,
       "allowToChangeInstallationDirectory": false,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+      "include": "build/installer.nsh"
     },
     "publish": [
       {
