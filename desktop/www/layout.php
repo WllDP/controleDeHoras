@@ -579,7 +579,7 @@ try {
             aria-label="Configurações"
           >
             <div class="settings-row">
-              <span>Dark mode</span>
+              <span>Modo escuro</span>
               <button
                 type="button"
                 id="themeSettingsToggle"

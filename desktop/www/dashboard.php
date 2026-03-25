@@ -234,7 +234,7 @@ ob_start();
         <button
             type="button"
             onclick="atualizarPlanilha()"
-            class="w-full bg-[#2E3A4A] hover:bg-[#1F2937] text-white py-2 rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#2E3A4A]/40"
+            class="w-full bg-[#2E3A4A] hover:bg-[#4D607A] text-white py-2 rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#2E3A4A]/40"
             title="Adiciona atividades ainda não exportadas na planilha"
         >
             Atualizar planilha

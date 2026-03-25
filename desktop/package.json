@@ -1,6 +1,6 @@
 {
   "name": "controle-horas",
-  "version": "6.1.0",
+  "version": "6.2.0",
   "description": "Controle de Horas",
   "main": "src/main.cjs",
   "type": "commonjs",
