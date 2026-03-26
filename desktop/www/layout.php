@@ -93,6 +93,10 @@ try {
       transition: background-color 220ms ease, color 220ms ease,
                   border-color 220ms ease, box-shadow 220ms ease;
     }
+    .theme-transition *::-webkit-scrollbar-track,
+    .theme-transition *::-webkit-scrollbar-thumb {
+      transition: background-color 220ms ease, box-shadow 220ms ease;
+    }
     .page-fade-in {
       animation: fadeInUp 80ms linear both;
     }
@@ -189,11 +193,13 @@ try {
       background-color: var(--scroll-track);
       border-radius: 12px;
       box-shadow: inset 0 0 6px var(--scroll-shadow);
+      transition: background-color 220ms ease, box-shadow 220ms ease;
     }
     *::-webkit-scrollbar-thumb {
       background-color: var(--scroll-thumb);
       border-radius: 12px;
       box-shadow: inset 0 0 6px var(--scroll-shadow);
+      transition: background-color 220ms ease, box-shadow 220ms ease;
     }
     *::-webkit-scrollbar-thumb:hover {
       background-color: var(--scroll-thumb-hover);
@@ -212,9 +218,9 @@ try {
       100% { transform: translateX(0); }
     }
     @keyframes activityInputGlow {
-      0% { box-shadow: 0 0 0 0 rgba(254, 202, 202, 0); background-color: rgba(254, 242, 242, 0); }
-      30% { box-shadow: 0 0 0 4px rgba(254, 202, 202, 0.6); background-color: rgba(254, 226, 226, 0.5); }
-      100% { box-shadow: 0 0 0 0 rgba(254, 202, 202, 0); background-color: rgba(254, 242, 242, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); background-color: rgba(254, 242, 242, 0); }
+      30% { box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.75); background-color: rgba(254, 226, 226, 0.65); }
+      100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); background-color: rgba(254, 242, 242, 0); }
     }
     .activity-input-attention {
       animation: activityInputNudge 380ms ease-in-out, activityInputGlow 900ms ease-in-out;
@@ -324,6 +330,21 @@ try {
     }
     body[data-theme="dark"] .startup-modal-cancel:hover {
       background-color: #374151;
+    }
+    body[data-theme="dark"] #widget-root .btn-update-planilha {
+      background-color: #2E3A4A !important;
+    }
+    body[data-theme="dark"] #widget-root .btn-update-planilha:hover {
+      background-color: #4D607A !important;
+    }
+    body[data-theme="dark"] #widget-root .btn-nova-planilha {
+      background-color: #0b2a5b !important;
+    }
+    body[data-theme="dark"] #widget-root .btn-nova-planilha:hover {
+      background-color: #1f5a96 !important;
+    }
+    body[data-theme="dark"] #widget-root .project-item:hover {
+      background-color: #1e293b !important;
     }
     .drag-region { -webkit-app-region: drag; }
     .no-drag { -webkit-app-region: no-drag; }
@@ -454,7 +475,7 @@ try {
       transition: left 180ms ease;
     }
     .settings-toggle.is-on {
-      background: #2563eb;
+      background: #1f5a96;
     }
     .settings-toggle.is-on::after {
       left: calc(100% - var(--toggle-knob) - var(--toggle-pad));
@@ -474,7 +495,6 @@ try {
     }
     .settings-option:hover {
       background: color-mix(in srgb, var(--app-muted) 10%, transparent);
-      color: #2563eb;
     }
     .settings-option.is-active {
       background: color-mix(in srgb, #2563eb 16%, transparent);
@@ -817,8 +837,6 @@ try {
       const STARTUP_KEY = "controle_horas::startup_auto_launch";
       const checkUpdatesBtn = document.getElementById("checkUpdatesBtn");
       let updateChecking = false;
-      let updateDownloading = false;
-      let suppressCloseConfirm = false;
 
       let overlayHideTimer = null;
       function cancelOverlayHide() {
@@ -956,69 +974,6 @@ try {
         }, iconDurationMs);
       }
 
-      function showInfo(message) {
-        if (!overlay || !msg || !okBtn || !cancelBtn) {
-          window.alert(message);
-          return Promise.resolve(true);
-        }
-
-        let modal = null;
-        msg.textContent = message;
-        msg.title = message;
-        msg.classList.remove("has-icon");
-        msg.classList.add("text-center");
-        if (box) {
-          box.classList.add("app-modal-compact");
-        }
-        okBtn.classList.remove("hidden");
-        cancelBtn.classList.add("hidden");
-        overlay.classList.remove("hidden");
-        requestAnimationFrame(() => {
-          overlay.classList.add("is-open");
-        });
-
-        return new Promise(resolve => {
-          let resolved = false;
-          const cleanup = (forced = false) => {
-            if (resolved) return;
-            resolved = true;
-            modal?.close({ keepOpen: forced });
-            okBtn.onclick = null;
-            resolve(true);
-          };
-          modal = beginModal(() => cleanup(true));
-          okBtn.onclick = () => cleanup(false);
-          setTimeout(() => okBtn.focus(), 0);
-        });
-      }
-
-      let updateModalOpen = false;
-      function showUpdateProgress(percent) {
-        if (!overlay || !msg || !okBtn || !cancelBtn) return;
-        const safePct = Math.max(0, Math.min(100, Math.round(percent)));
-        beginModal();
-        msg.classList.remove("has-icon");
-        msg.classList.add("text-center");
-        msg.innerHTML = `
-          <div class="text-sm mb-3">Baixando atualização... ${safePct}%</div>
-          <div style="width: 200px; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin: 0 auto;">
-            <div id="updateProgressBar" style="height: 100%; width: ${safePct}%; background: #2563eb; transition: width 160ms ease;"></div>
-          </div>
-        `;
-        if (box) box.classList.add("app-modal-compact");
-        okBtn.classList.add("hidden");
-        cancelBtn.classList.add("hidden");
-        overlay.classList.remove("hidden");
-        requestAnimationFrame(() => overlay.classList.add("is-open"));
-        updateModalOpen = true;
-      }
-
-      function closeUpdateModal() {
-        if (!overlay) return;
-        scheduleOverlayHide(overlay.dataset.modalToken);
-        updateModalOpen = false;
-      }
-
       function hasRunningActivity() {
         try {
           for (let i = 0; i < localStorage.length; i += 1) {
@@ -1122,7 +1077,7 @@ try {
         };
 
         checkUpdatesBtn.addEventListener("click", async () => {
-          if (updateChecking || updateDownloading) return;
+          if (updateChecking) return;
           updateChecking = true;
           checkUpdatesBtn.disabled = true;
           checkUpdatesBtn.textContent = "Verificando...";
@@ -1135,24 +1090,8 @@ try {
           }
           setTimeout(() => {
             updateChecking = false;
-            if (!updateDownloading) resetButton();
+            resetButton();
           }, 4000);
-        });
-
-        window.DesktopAPI.onUpdateAvailable?.(async () => {
-          updateChecking = false;
-          resetButton();
-          const ok = await showConfirm("Atualização disponível. Deseja baixar agora?");
-          if (ok) {
-            updateDownloading = true;
-            checkUpdatesBtn.textContent = "Baixando...";
-            showUpdateProgress(0);
-            await window.DesktopAPI.downloadUpdate().catch(() => {
-              updateDownloading = false;
-              resetButton();
-              closeUpdateModal();
-            });
-          }
         });
 
         window.DesktopAPI.onUpdateNotAvailable?.(() => {
@@ -1160,39 +1099,10 @@ try {
           resetButton();
           showIconInfo("Nenhuma atualização disponível.");
         });
-
-        window.DesktopAPI.onUpdateError?.((message) => {
-          updateChecking = false;
-          updateDownloading = false;
-          resetButton();
-          showInfo(`Não foi possível verificar atualizações. ${message || ""}`.trim());
-        });
-
-        window.DesktopAPI.onUpdateDownloaded?.(async () => {
-          updateChecking = false;
-          updateDownloading = false;
-          resetButton();
-          closeUpdateModal();
-          const ok = await showConfirm("Atualização instalada. Deseja reiniciar agora?");
-          if (ok) {
-            suppressCloseConfirm = true;
-            window.DesktopAPI.quitAndInstall?.();
-          }
-        });
-        window.DesktopAPI.onUpdateRestarting?.(() => {
-          suppressCloseConfirm = true;
-        });
-
-        window.DesktopAPI.onUpdateProgress?.((progress) => {
-          if (!updateDownloading) return;
-          const pct = progress?.percent ?? 0;
-          showUpdateProgress(pct);
-        });
       }
 
 
       window.handleClose = async function () {
-        if (suppressCloseConfirm) return;
         const message = hasRunningActivity()
           ? "Existe uma atividade em andamento. Deseja fechar o app?"
           : "Deseja fechar o app?";
@@ -1203,7 +1113,6 @@ try {
 
       if (window.DesktopAPI?.onAppRequestClose) {
         window.DesktopAPI.onAppRequestClose(async () => {
-          if (suppressCloseConfirm) return;
           const message = hasRunningActivity()
             ? "Existe uma atividade em andamento. Deseja fechar o app?"
             : "Deseja fechar o app?";
@@ -1216,4 +1125,3 @@ try {
   </script>
 </body>
 </html>
-

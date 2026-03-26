@@ -168,7 +168,7 @@ ob_start();
         <input
             type="text"
             id="atividade"
-            class="w-full px-4 py-2 border rounded focus:ring focus:ring-blue-300"
+            class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
     </div>
 
@@ -234,7 +234,7 @@ ob_start();
         <button
             type="button"
             onclick="atualizarPlanilha()"
-            class="w-full bg-[#2E3A4A] hover:bg-[#1F2937] text-white py-2 rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#2E3A4A]/40"
+            class="w-full btn-update-planilha bg-[#4D607A] hover:bg-[#2E3A4A] text-white py-2 rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#2E3A4A]/40"
             title="Adiciona atividades ainda não exportadas na planilha"
         >
             Atualizar planilha
@@ -243,7 +243,7 @@ ob_start();
         <button
             type="button"
             onclick="novaPlanilha()"
-            class="w-full bg-[#0b2a5b] hover:bg-[#1f5a96] text-white py-2 rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#0b2a5b]/40"
+            class="w-full btn-nova-planilha bg-[#1f5a96] hover:bg-[#0b2a5b] text-white py-2 rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#0b2a5b]/40"
             title="Gera uma nova planilha do zero (não acumulativa)"
         >
             Nova planilha

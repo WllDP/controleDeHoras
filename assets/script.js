@@ -320,6 +320,18 @@
     return `${h}:${m}:${s}`;
   }
 
+  function atualizarTempoNaLinha(atividade) {
+    const tbody = document.getElementById("listaAtividades");
+    if (!tbody || !atividade) return false;
+    const id = String(atividade.id);
+    const row = tbody.querySelector(`tr.activity-row[data-id="${id}"]`);
+    if (!row) return false;
+    const timeCell = row.querySelector("td.font-mono");
+    if (!timeCell) return false;
+    timeCell.textContent = formatar(Number(atividade.tempo) || 0);
+    return true;
+  }
+
   function renderizar() {
     const tbody = document.getElementById("listaAtividades");
     if (!tbody) return;
@@ -385,7 +397,10 @@
           </td>
           <td class="p-2 font-mono">${formatar(a.tempo)}</td>
           <td class="p-2 text-right">
-            <button data-id="${a.id}" class="text-red-500 hover:underline">Excluir</button>
+            <button
+              data-id="${a.id}"
+              class="inline-flex items-center justify-center rounded-md border border-red-500 px-2.5 py-1 text-xs font-semibold text-red-600 transition-colors duration-150 hover:border-red-600 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-200"
+            >Excluir</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -610,7 +625,9 @@
         ativa.tempo += deltaS;
         ativa.lastTick += deltaS * 1000;
         saveCache();
-        renderizar();
+        if (!atualizarTempoNaLinha(ativa)) {
+          renderizar();
+        }
       }
     }, 1000);
   }

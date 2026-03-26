@@ -52,13 +52,13 @@ ob_start();
         Controle de Atividades
     </h1>
 
-    <form action="login.php" method="POST" class="space-y-4">
+    <form action="login.php" method="POST" class="space-y-4" novalidate>
         <input
             type="text"
             name="nome"
+            id="loginUserInput"
             placeholder="Nome de usuário"
             class="w-full border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
             autocomplete="username"
         />
         <input type="hidden" name="theme" id="themeInput" value="">
@@ -100,6 +100,7 @@ require 'layout.php';
     const input = document.getElementById("themeInput");
     const form = document.querySelector("form[action=\"login.php\"]");
     if (!input || !form) return;
+    const userInput = document.getElementById("loginUserInput");
     const sync = () => {
       try {
         const saved = localStorage.getItem(THEME_KEY);
@@ -107,6 +108,17 @@ require 'layout.php';
       } catch {}
     };
     sync();
-    form.addEventListener("submit", sync);
+    form.addEventListener("submit", (e) => {
+      sync();
+      if (!userInput) return;
+      const nome = String(userInput.value || "").trim();
+      if (!nome) {
+        e.preventDefault();
+        userInput.classList.remove("activity-input-attention");
+        void userInput.offsetWidth;
+        userInput.classList.add("activity-input-attention");
+        userInput.focus();
+      }
+    });
   })();
 </script>

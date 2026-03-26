@@ -93,6 +93,10 @@ try {
       transition: background-color 220ms ease, color 220ms ease,
                   border-color 220ms ease, box-shadow 220ms ease;
     }
+    .theme-transition *::-webkit-scrollbar-track,
+    .theme-transition *::-webkit-scrollbar-thumb {
+      transition: background-color 220ms ease, box-shadow 220ms ease;
+    }
     .page-fade-in {
       animation: fadeInUp 80ms linear both;
     }
@@ -189,11 +193,13 @@ try {
       background-color: var(--scroll-track);
       border-radius: 12px;
       box-shadow: inset 0 0 6px var(--scroll-shadow);
+      transition: background-color 220ms ease, box-shadow 220ms ease;
     }
     *::-webkit-scrollbar-thumb {
       background-color: var(--scroll-thumb);
       border-radius: 12px;
       box-shadow: inset 0 0 6px var(--scroll-shadow);
+      transition: background-color 220ms ease, box-shadow 220ms ease;
     }
     *::-webkit-scrollbar-thumb:hover {
       background-color: var(--scroll-thumb-hover);
@@ -212,9 +218,9 @@ try {
       100% { transform: translateX(0); }
     }
     @keyframes activityInputGlow {
-      0% { box-shadow: 0 0 0 0 rgba(254, 202, 202, 0); background-color: rgba(254, 242, 242, 0); }
-      30% { box-shadow: 0 0 0 4px rgba(254, 202, 202, 0.6); background-color: rgba(254, 226, 226, 0.5); }
-      100% { box-shadow: 0 0 0 0 rgba(254, 202, 202, 0); background-color: rgba(254, 242, 242, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); background-color: rgba(254, 242, 242, 0); }
+      30% { box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.75); background-color: rgba(254, 226, 226, 0.65); }
+      100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); background-color: rgba(254, 242, 242, 0); }
     }
     .activity-input-attention {
       animation: activityInputNudge 380ms ease-in-out, activityInputGlow 900ms ease-in-out;
@@ -324,6 +330,21 @@ try {
     }
     body[data-theme="dark"] .startup-modal-cancel:hover {
       background-color: #374151;
+    }
+    body[data-theme="dark"] #widget-root .btn-update-planilha {
+      background-color: #2E3A4A !important;
+    }
+    body[data-theme="dark"] #widget-root .btn-update-planilha:hover {
+      background-color: #4D607A !important;
+    }
+    body[data-theme="dark"] #widget-root .btn-nova-planilha {
+      background-color: #0b2a5b !important;
+    }
+    body[data-theme="dark"] #widget-root .btn-nova-planilha:hover {
+      background-color: #1f5a96 !important;
+    }
+    body[data-theme="dark"] #widget-root .project-item:hover {
+      background-color: #1e293b !important;
     }
     .drag-region { -webkit-app-region: drag; }
     .no-drag { -webkit-app-region: no-drag; }
@@ -454,7 +475,7 @@ try {
       transition: left 180ms ease;
     }
     .settings-toggle.is-on {
-      background: #2563eb;
+      background: #1f5a96;
     }
     .settings-toggle.is-on::after {
       left: calc(100% - var(--toggle-knob) - var(--toggle-pad));
@@ -467,7 +488,7 @@ try {
       padding: 8px 10px;
       border-radius: 10px;
       font-size: 0.85rem;
-      color: var(--app-text);
+      color: var(--app-muted);
       background: transparent;
       border: 1px solid transparent;
       transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
@@ -578,7 +599,7 @@ try {
             aria-label="Configurações"
           >
             <div class="settings-row">
-              <span>Dark mode</span>
+              <span>Modo escuro</span>
               <button
                 type="button"
                 id="themeSettingsToggle"
@@ -687,6 +708,30 @@ try {
       const themeSettingsToggle = document.getElementById("themeSettingsToggle");
       const widgetRoot = document.getElementById("widget-root");
       const TRANSITION_CLASS = "theme-transition";
+
+      function reportWidgetHitbox() {
+        if (!window.DesktopAPI?.setWidgetHitbox || !widgetRoot) return;
+        const r = widgetRoot.getBoundingClientRect();
+        const sx = Number(window.screenX ?? window.screenLeft ?? 0);
+        const sy = Number(window.screenY ?? window.screenTop ?? 0);
+        const rect = {
+          x: Math.round(sx + r.left),
+          y: Math.round(sy + r.top),
+          width: Math.round(r.width),
+          height: Math.round(r.height),
+        };
+        window.DesktopAPI.setWidgetHitbox(rect);
+      }
+
+      if (widgetRoot && window.DesktopAPI?.setWidgetHitbox) {
+        reportWidgetHitbox();
+        setInterval(reportWidgetHitbox, 200);
+        if ("ResizeObserver" in window) {
+          const ro = new ResizeObserver(() => reportWidgetHitbox());
+          ro.observe(widgetRoot);
+        }
+        window.addEventListener("resize", reportWidgetHitbox);
+      }
 
       function syncThemeToggle(theme) {
         if (!themeSettingsToggle) return;

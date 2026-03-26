@@ -66,7 +66,7 @@ ob_start();
                             <a
                              href="selecionar_projeto.php?nome=<?= urlencode($p['nome']) ?>"
                                 data-project-id="<?= (int)$p['id'] ?>"
-                                class="block px-4 py-3 hover:bg-slate-50 border-b last:border-b-0 transition project-divider">
+                                class="block px-4 py-3 hover:bg-[#F1F5F9] border-b last:border-b-0 transition project-divider project-item">
                                 <div class="flex items-center justify-between gap-4">
                                     <div class="flex items-center gap-2 min-w-0 max-w-[200px]">
                                         <div class="min-w-0 max-w-[200px] font-medium text-slate-800 truncate project-name"
@@ -103,7 +103,6 @@ ob_start();
                     name="projeto"
                     placeholder="Nome do projeto"
                     class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
                     maxlength="80"
                     autocomplete="off"
                 />
@@ -394,17 +393,22 @@ ob_start();
       }
     });
 
-    const createForm = document.getElementById("createProjectForm");
-    if (createForm && window.fetch) {
-      createForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const input = createForm.querySelector('input[name="projeto"]');
-        const submitBtn = createForm.querySelector('button[type="submit"]');
-        const nome = input ? input.value.trim() : "";
-        if (!nome) {
-          createForm.submit();
-          return;
-        }
+        const createForm = document.getElementById("createProjectForm");
+        const createInput = createForm?.querySelector('input[name="projeto"]');
+        if (createForm && window.fetch) {
+          createForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const submitBtn = createForm.querySelector('button[type="submit"]');
+            const nome = createInput ? createInput.value.trim() : "";
+            if (!nome) {
+              if (createInput) {
+                createInput.classList.remove("activity-input-attention");
+                void createInput.offsetWidth;
+                createInput.classList.add("activity-input-attention");
+                createInput.focus();
+              }
+              return;
+            }
 
         if (submitBtn) submitBtn.disabled = true;
 
