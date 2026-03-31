@@ -554,7 +554,7 @@ try {
       font-size: 0.85rem;
       color: var(--app-muted);
       line-height: 1.4;
-      text-align: justify;
+      text-align: center;
     }
     .startup-modal-close {
       position: absolute;

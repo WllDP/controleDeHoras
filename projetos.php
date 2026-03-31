@@ -143,6 +143,63 @@ ob_start();
   (() => {
     const editBtn = document.getElementById("editProjectsBtn");
     const list = document.getElementById("projectsList");
+    const createForm = document.getElementById("createProjectForm");
+    const createInput = createForm?.querySelector('input[name="projeto"]');
+
+    if (createForm && window.fetch && !createForm.dataset.submitBound) {
+      createForm.dataset.submitBound = "true";
+      createForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = createForm.querySelector('button[type="submit"]');
+        const nome = createInput ? createInput.value.trim() : "";
+        if (!nome) {
+          if (createInput) {
+            createInput.classList.remove("activity-input-attention");
+            void createInput.offsetWidth;
+            createInput.classList.add("activity-input-attention");
+            createInput.focus();
+          }
+          return;
+        }
+
+        if (submitBtn) submitBtn.disabled = true;
+
+        const payload = new URLSearchParams();
+        payload.set("projeto", nome);
+        payload.set("ajax", "1");
+
+        try {
+          const res = await fetch("criar_projeto.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-Requested-With": "XMLHttpRequest",
+              Accept: "application/json",
+            },
+            body: payload.toString(),
+          });
+
+          if (res.status === 409) {
+            showProjectAlert("Nome de projeto em uso");
+            return;
+          }
+
+          const data = await res.json().catch(() => null);
+          if (res.ok && data?.ok) {
+            window.location.href = data.redirect || "dashboard.php";
+            return;
+          }
+
+          const msg = data?.message || "Nao foi possivel criar o projeto.";
+          showProjectAlert(msg);
+        } catch (_err) {
+          showProjectAlert("Nao foi possivel criar o projeto.");
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+
     if (!editBtn || !list) return;
 
     let editing = false;
@@ -395,60 +452,6 @@ ob_start();
       }
     });
 
-        const createForm = document.getElementById("createProjectForm");
-        const createInput = createForm?.querySelector('input[name="projeto"]');
-        if (createForm && window.fetch) {
-          createForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const submitBtn = createForm.querySelector('button[type="submit"]');
-            const nome = createInput ? createInput.value.trim() : "";
-            if (!nome) {
-              if (createInput) {
-                createInput.classList.remove("activity-input-attention");
-                void createInput.offsetWidth;
-                createInput.classList.add("activity-input-attention");
-                createInput.focus();
-              }
-              return;
-            }
-
-        if (submitBtn) submitBtn.disabled = true;
-
-        const payload = new URLSearchParams();
-        payload.set("projeto", nome);
-        payload.set("ajax", "1");
-
-        try {
-          const res = await fetch("criar_projeto.php", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-              "X-Requested-With": "XMLHttpRequest",
-              Accept: "application/json",
-            },
-            body: payload.toString(),
-          });
-
-          if (res.status === 409) {
-            showProjectAlert("Nome de projeto em uso");
-            return;
-          }
-
-          const data = await res.json().catch(() => null);
-          if (res.ok && data?.ok) {
-            window.location.href = data.redirect || "dashboard.php";
-            return;
-          }
-
-          const msg = data?.message || "Nao foi possivel criar o projeto.";
-          showProjectAlert(msg);
-        } catch (_err) {
-          showProjectAlert("Nao foi possivel criar o projeto.");
-        } finally {
-          if (submitBtn) submitBtn.disabled = false;
-        }
-      });
-    }
   })();
 </script>
 
