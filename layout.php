@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $dbTheme = '';
 try {
   if (isset($db)) {
@@ -285,6 +285,9 @@ try {
       color: color-mix(in srgb, var(--app-muted) 70%, transparent);
       opacity: 1;
     }
+    #widget-root input[type="checkbox"] {
+      accent-color: #1f5a96;
+    }
     #widget-root .app-modal-box {
       background-color: var(--app-modal-bg) !important;
       color: var(--app-text);
@@ -354,6 +357,30 @@ try {
     }
     body[data-theme="dark"] #widget-root .edit-projects-disabled {
       color: #1f2937 !important;
+    }
+    body:not([data-theme="dark"]) #appModalOk {
+      background-color: #1f5a96 !important;
+    }
+    body:not([data-theme="dark"]) #appModalOk:hover {
+      background-color: #0b2a5b !important;
+    }
+    body:not([data-theme="dark"]) #startupModalOk {
+      background-color: #1f5a96 !important;
+    }
+    body:not([data-theme="dark"]) #startupModalOk:hover {
+      background-color: #0b2a5b !important;
+    }
+    body[data-theme="dark"] #appModalOk {
+      background-color: #0b2a5b !important;
+    }
+    body[data-theme="dark"] #appModalOk:hover {
+      background-color: #1f5a96 !important;
+    }
+    body[data-theme="dark"] #startupModalOk {
+      background-color: #0b2a5b !important;
+    }
+    body[data-theme="dark"] #startupModalOk:hover {
+      background-color: #1f5a96 !important;
     }
     .drag-region { -webkit-app-region: drag; }
     .no-drag { -webkit-app-region: no-drag; }
@@ -846,6 +873,9 @@ try {
       const STARTUP_KEY = "controle_horas::startup_auto_launch";
       const checkUpdatesBtn = document.getElementById("checkUpdatesBtn");
       let updateChecking = false;
+      let updateDownloading = false;
+      let updateModal = null;
+      let updateTimeout = null;
 
       let overlayHideTimer = null;
       function cancelOverlayHide() {
@@ -983,6 +1013,57 @@ try {
         }, iconDurationMs);
       }
 
+      function clearUpdateTimeout() {
+        if (updateTimeout) {
+          clearTimeout(updateTimeout);
+          updateTimeout = null;
+        }
+      }
+
+      function closeUpdateModal() {
+        if (!updateModal) return;
+        updateModal.close();
+        updateModal = null;
+      }
+
+      function showUpdateProgress(percent, label) {
+        if (!overlay || !msg || !okBtn || !cancelBtn) return;
+        cancelOverlayHide();
+
+        if (!updateModal) {
+          updateModal = beginModal(() => {
+            updateModal = null;
+          });
+        }
+
+        const safePercent = Number.isFinite(percent)
+          ? Math.max(0, Math.min(100, Math.round(percent)))
+          : 0;
+        const isDark = document.body?.getAttribute("data-theme") === "dark";
+        const trackColor = isDark ? "#0f172a" : "#e2e8f0";
+        const barColor = isDark ? "#1f5a96" : "#1f5a96";
+        const labelText = label || "Baixando atualização...";
+
+        msg.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;">
+            <div>${labelText}</div>
+            <div style="width:240px;height:8px;background:${trackColor};border-radius:999px;overflow:hidden;">
+              <div style="height:100%;width:${safePercent}%;background:${barColor};transition:width 200ms ease;"></div>
+            </div>
+            <div style="font-size:12px;color:#64748b;">${safePercent}%</div>
+          </div>
+        `;
+        msg.title = labelText;
+        msg.classList.add("has-icon", "text-center");
+        if (box) box.classList.add("app-modal-compact");
+        okBtn.classList.add("hidden");
+        cancelBtn.classList.add("hidden");
+        overlay.classList.remove("hidden");
+        requestAnimationFrame(() => {
+          overlay.classList.add("is-open");
+        });
+      }
+
       function hasRunningActivity() {
         try {
           for (let i = 0; i < localStorage.length; i += 1) {
@@ -1078,38 +1159,141 @@ try {
           }
         }
       }
-
       if (checkUpdatesBtn && window.DesktopAPI?.checkForUpdates) {
         const resetButton = () => {
           checkUpdatesBtn.disabled = false;
           checkUpdatesBtn.textContent = "Buscar atualizações";
         };
 
-        checkUpdatesBtn.addEventListener("click", async () => {
-          if (updateChecking) return;
-          updateChecking = true;
-          checkUpdatesBtn.disabled = true;
-          checkUpdatesBtn.textContent = "Verificando...";
-          const res = await window.DesktopAPI.checkForUpdates().catch(() => null);
-          if (res && res.status === "dev") {
-            updateChecking = false;
-            resetButton();
+        const runDevSimulation = async () => {
+          const ok = await showConfirm("Modo dev: simular atualização?");
+          if (!ok) {
             showIconInfo("Nenhuma atualização disponível.");
             return;
           }
-          setTimeout(() => {
+          updateDownloading = true;
+          checkUpdatesBtn.disabled = true;
+          checkUpdatesBtn.textContent = "Baixando...";
+          showUpdateProgress(0, "Baixando atualização...");
+          let percent = 0;
+          const step = () => {
+            if (!updateDownloading) return;
+            percent = Math.min(100, percent + 12);
+            showUpdateProgress(percent, "Baixando atualização...");
+            if (percent < 100) {
+              setTimeout(step, 260);
+            } else {
+              updateDownloading = false;
+              closeUpdateModal();
+              showConfirm("Atualização baixada. Reiniciar para instalar?")
+                .then((restart) => {
+                  if (restart) {
+                    showUpdateProgress(100, "Reiniciando para instalar...");
+                    setTimeout(() => {
+                      closeUpdateModal();
+                      resetButton();
+                    }, 1200);
+                  } else {
+                    resetButton();
+                  }
+                });
+            }
+          };
+          setTimeout(step, 350);
+        };
+
+        checkUpdatesBtn.addEventListener("click", async () => {
+          if (updateChecking || updateDownloading) return;
+          updateChecking = true;
+          checkUpdatesBtn.disabled = true;
+          checkUpdatesBtn.textContent = "Verificando...";
+          clearUpdateTimeout();
+          updateTimeout = setTimeout(() => {
+            if (!updateChecking) return;
             updateChecking = false;
             resetButton();
-          }, 4000);
+            showIconInfo("Não foi possível verificar atualizações.");
+          }, 15000);
+
+          const res = await window.DesktopAPI.checkForUpdates().catch(() => null);
+          if (res && res.status === "dev") {
+            updateChecking = false;
+            clearUpdateTimeout();
+            resetButton();
+            runDevSimulation();
+            return;
+          }
+          if (res && res.status === "error") {
+            updateChecking = false;
+            clearUpdateTimeout();
+            resetButton();
+            showIconInfo(res.message || "Erro ao buscar atualizações.");
+          }
+        });
+
+        window.DesktopAPI.onUpdateAvailable?.(async () => {
+          updateChecking = false;
+          clearUpdateTimeout();
+          const ok = await showConfirm("Atualização encontrada. Deseja baixar agora?");
+          if (!ok) {
+            resetButton();
+            return;
+          }
+          updateDownloading = true;
+          checkUpdatesBtn.disabled = true;
+          checkUpdatesBtn.textContent = "Baixando...";
+          showUpdateProgress(0, "Baixando atualização...");
+          try {
+            await window.DesktopAPI.downloadUpdate();
+          } catch (err) {
+            updateDownloading = false;
+            resetButton();
+            closeUpdateModal();
+            showIconInfo(err?.message || "Erro ao baixar a atualização.");
+          }
         });
 
         window.DesktopAPI.onUpdateNotAvailable?.(() => {
           updateChecking = false;
+          clearUpdateTimeout();
           resetButton();
           showIconInfo("Nenhuma atualização disponível.");
         });
-      }
 
+        window.DesktopAPI.onUpdateError?.((message) => {
+          updateChecking = false;
+          updateDownloading = false;
+          clearUpdateTimeout();
+          resetButton();
+          closeUpdateModal();
+          showIconInfo(message || "Erro ao buscar atualizações.");
+        });
+
+        window.DesktopAPI.onUpdateProgress?.((progress) => {
+          if (!updateDownloading) return;
+          const percent = progress?.percent ?? 0;
+          showUpdateProgress(percent, "Baixando atualização...");
+        });
+
+        window.DesktopAPI.onUpdateDownloaded?.(async () => {
+          updateDownloading = false;
+          clearUpdateTimeout();
+          closeUpdateModal();
+          const ok = await showConfirm("Atualização baixada. Reiniciar para instalar?");
+          if (!ok) {
+            resetButton();
+            return;
+          }
+          showUpdateProgress(100, "Reiniciando para instalar...");
+          try {
+            await window.DesktopAPI.quitAndInstall();
+          } catch {}
+        });
+
+        window.DesktopAPI.onUpdateRestarting?.(() => {
+          showUpdateProgress(100, "Reiniciando para instalar...");
+        });
+      }
 
       window.handleClose = async function () {
         const message = hasRunningActivity()
@@ -1134,3 +1318,5 @@ try {
   </script>
 </body>
 </html>
+
+
