@@ -17,6 +17,7 @@ $pausedProjects = [];
 $stmt = $db->prepare('SELECT DISTINCT projeto FROM atividades_pausadas WHERE colaborador = :u AND projeto IS NOT NULL AND projeto != ""');
 $stmt->execute([':u' => $usuario]);
 $pausedProjects = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+$hasProjects = count($projetos) > 0;
 
 ob_start();
 ?>
@@ -52,7 +53,8 @@ ob_start();
                 <button
                     type="button"
                     id="editProjectsBtn"
-                    class="h-10 w-10 inline-flex items-center justify-center text-[#0b2a5b] hover:text-[#1f5a96] transition text-lg"
+                    class="h-10 w-10 inline-flex items-center justify-center text-lg transition-colors duration-[10ms] edit-projects-btn<?= $hasProjects ? ' text-[#0b2a5b] hover:text-[#1f5a96]' : ' text-[#e2e8f0] cursor-default edit-projects-disabled' ?>"
+                    <?= $hasProjects ? '' : 'disabled' ?>
                 >
                     <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                 </button>
@@ -108,7 +110,7 @@ ob_start();
                 />
                 <button
                     type="submit"
-                    class="bg-[#0b2a5b] text-white px-4 py-2 rounded hover:bg-[#1f5a96] transition whitespace-nowrap"
+                    class="btn-criar-entrar bg-[#1f5a96] text-white px-4 py-2 rounded hover:bg-[#0b2a5b] transition whitespace-nowrap"
                 >
                     Criar e entrar
                 </button>

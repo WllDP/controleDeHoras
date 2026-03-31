@@ -343,8 +343,17 @@ try {
     body[data-theme="dark"] #widget-root .btn-nova-planilha:hover {
       background-color: #1f5a96 !important;
     }
+    body[data-theme="dark"] #widget-root .btn-criar-entrar {
+      background-color: #0b2a5b !important;
+    }
+    body[data-theme="dark"] #widget-root .btn-criar-entrar:hover {
+      background-color: #1f5a96 !important;
+    }
     body[data-theme="dark"] #widget-root .project-item:hover {
       background-color: #1e293b !important;
+    }
+    body[data-theme="dark"] #widget-root .edit-projects-disabled {
+      color: #1f2937 !important;
     }
     .drag-region { -webkit-app-region: drag; }
     .no-drag { -webkit-app-region: no-drag; }
